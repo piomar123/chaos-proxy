@@ -9,6 +9,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import javax.servlet.http.HttpServletResponse;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.List;
 import java.util.Random;
 import java.util.function.Supplier;
 
@@ -48,7 +53,18 @@ public class ChaosService
 
     public void processRequestAndApplyChaos(Supplier<ResponseEntity<byte[]>> responseEntity) throws InterruptedException
     {
-        switch (activeChaosStrategy)
+        try {
+            List<String> configLines = Files.readAllLines(Paths.get("runtime.config"));
+            String loadedStrategyLine = configLines.get(0);
+            ChaosStrategy loadedStrategy = ChaosStrategy.valueOf(loadedStrategyLine);
+            if (loadedStrategy != this.activeChaosStrategy) {
+                setActiveChaosStrategy(loadedStrategy);
+            }
+        } catch (IOException e) {
+            log.info("Missing runtime config", e);
+        }
+
+        switch (this.activeChaosStrategy)
         {
             case NO_CHAOS:
                 this.chaosResponseEntity = responseEntity.get();
@@ -75,7 +91,6 @@ public class ChaosService
                 this.chaosStatusCode = getRandomStatusCodeFavouringOk();
                 log.info("Responding with status code: {}", this.chaosStatusCode);
                 break;
-
         }
 
     }
