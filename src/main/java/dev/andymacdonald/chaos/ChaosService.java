@@ -9,6 +9,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import javax.servlet.http.HttpServletResponse;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 import java.util.function.Supplier;
 
@@ -39,10 +45,11 @@ public class ChaosService
 
     public ChaosResult processRequestAndApplyChaos(Supplier<ResponseEntity<byte[]>> responseEntity) throws InterruptedException
     {
+
         int chaosStatusCode;
         ResponseEntity<byte[]> chaosResponseEntity;
         Long delayedBy = 0L;
-        ChaosStrategy chaosStrategy = this.activeChaosStrategy;
+        final ChaosStrategy chaosStrategy = loadRuntimeStrategy().orElse(this.activeChaosStrategy);
 
         switch (chaosStrategy)
         {
@@ -79,6 +86,19 @@ public class ChaosService
                           .chaosResponseEntity(chaosResponseEntity)
                           .delayedBy(delayedBy)
                           .build();
+    }
+
+    private Optional<ChaosStrategy> loadRuntimeStrategy()
+    {
+        try {
+            List<String> configLines = Files.readAllLines(Paths.get("runtime.config"));
+            String loadedStrategyLine = configLines.get(0);
+            ChaosStrategy loadedStrategy = ChaosStrategy.valueOf(loadedStrategyLine);
+            return Optional.of(loadedStrategy);
+        } catch (IOException e) {
+            log.info("Missing runtime config", e);
+        }
+        return Optional.empty();
     }
 
     public synchronized void setActiveChaosStrategy(ChaosStrategy chaosStrategy)
