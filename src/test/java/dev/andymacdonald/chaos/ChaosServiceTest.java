@@ -31,9 +31,9 @@ public class ChaosServiceTest
     {
         ChaosProxyConfigurationService mockChaosProxyConfigurationService = mock(ChaosProxyConfigurationService.class);
         DelayService mockDelayService = mock(DelayService.class);
-        when(mockChaosProxyConfigurationService.getInitialChaosStrategy()).thenReturn(ChaosStrategy.DELAY_RESPONSE);
+        when(mockChaosProxyConfigurationService.getInitialChaosStrategy()).thenReturn(ChaosStrategy.DELAY_REQUEST);
         ChaosService chaosService = new ChaosService(mockChaosProxyConfigurationService, mockDelayService);
-        assertEquals(ChaosStrategy.DELAY_RESPONSE, chaosService.getActiveChaosStrategy());
+        assertEquals(ChaosStrategy.DELAY_REQUEST, chaosService.getActiveChaosStrategy());
     }
 
     @Test
@@ -49,8 +49,8 @@ public class ChaosServiceTest
     {
         DelayService mockDelayService = mock(DelayService.class);
         ChaosService chaosService = new ChaosService(new ChaosProxyConfigurationService(), mockDelayService);
-        chaosService.setActiveChaosStrategy(ChaosStrategy.DELAY_RESPONSE);
-        assertEquals(ChaosStrategy.DELAY_RESPONSE, chaosService.getActiveChaosStrategy());
+        chaosService.setActiveChaosStrategy(ChaosStrategy.DELAY_REQUEST);
+        assertEquals(ChaosStrategy.DELAY_REQUEST, chaosService.getActiveChaosStrategy());
     }
 
     @Test
@@ -61,8 +61,8 @@ public class ChaosServiceTest
         Supplier<ResponseEntity<byte[]>> mockResponseEntity = () -> mock(ResponseEntity.class);
         ChaosProxyConfigurationService chaosProxyConfigurationService = new ChaosProxyConfigurationService(mockLogger, "", "", 30, 60, true, false);
         ChaosService chaosService = new ChaosService(chaosProxyConfigurationService, mockDelayService);
-        chaosService.setActiveChaosStrategy(ChaosStrategy.DELAY_RESPONSE);
-        chaosService.processRequestAndApplyChaos(mockResponseEntity);
+        chaosService.setActiveChaosStrategy(ChaosStrategy.DELAY_REQUEST);
+        chaosService.processRequestAndApplyChaos(mockResponseEntity, "");
         verify(mockDelayService).delay(chaosProxyConfigurationService.getDelayTimeSeconds());
     }
 
@@ -76,8 +76,8 @@ public class ChaosServiceTest
         when(mockResponseEntitySupplier.get()).thenReturn(mockResponseEntity);
         ChaosProxyConfigurationService chaosProxyConfigurationService = new ChaosProxyConfigurationService(mockLogger, "", "", 30, 60, true, false);
         ChaosService chaosService = new ChaosService(chaosProxyConfigurationService, mockDelayService);
-        chaosService.setActiveChaosStrategy(ChaosStrategy.DELAY_RESPONSE);
-        chaosService.processRequestAndApplyChaos(mockResponseEntitySupplier);
+        chaosService.setActiveChaosStrategy(ChaosStrategy.DELAY_REQUEST);
+        chaosService.processRequestAndApplyChaos(mockResponseEntitySupplier, "");
         verify(mockDelayService).delay(chaosProxyConfigurationService.getDelayTimeSeconds());
         verify(mockResponseEntitySupplier).get();
     }
@@ -91,7 +91,7 @@ public class ChaosServiceTest
         ChaosProxyConfigurationService chaosProxyConfigurationService = new ChaosProxyConfigurationService(mockLogger, "", "", 30, 60, true, false);
         ChaosService chaosService = new ChaosService(chaosProxyConfigurationService, mockDelayService);
         chaosService.setActiveChaosStrategy(ChaosStrategy.INTERNAL_SERVER_ERROR);
-        chaosService.processRequestAndApplyChaos(mockResponseEntitySupplier);
+        chaosService.processRequestAndApplyChaos(mockResponseEntitySupplier, "");
         verifyZeroInteractions(mockResponseEntitySupplier);
     }
 
@@ -104,7 +104,7 @@ public class ChaosServiceTest
         ChaosProxyConfigurationService chaosProxyConfigurationService = new ChaosProxyConfigurationService(mockLogger, "", "", 30, 60, true, false);
         ChaosService chaosService = new ChaosService(chaosProxyConfigurationService, mockDelayService);
         chaosService.setActiveChaosStrategy(ChaosStrategy.BAD_REQUEST);
-        chaosService.processRequestAndApplyChaos(mockResponseEntitySupplier);
+        chaosService.processRequestAndApplyChaos(mockResponseEntitySupplier, "");
         verifyZeroInteractions(mockResponseEntitySupplier);
     }
 }

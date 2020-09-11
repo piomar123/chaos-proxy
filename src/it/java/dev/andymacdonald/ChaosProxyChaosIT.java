@@ -92,7 +92,7 @@ public class ChaosProxyChaosIT
     @Test
     public void chaosProxy_withRequestAndDelayResponseStrategy_delegatesToDelayServiceThenReturnsResponse() throws Exception
     {
-        chaosService.setActiveChaosStrategy(ChaosStrategy.DELAY_RESPONSE);
+        chaosService.setActiveChaosStrategy(ChaosStrategy.DELAY_REQUEST);
         chaosProxyConfigurationService.setFixedDelayPeriod(true);
         doNothing().when(mockDelayService).delay(anyLong());
         stubFor(com.github.tomakehurst.wiremock.client.WireMock.get(urlMatching("/")).willReturn(aResponse().withStatus(200).withHeader("Content-Type", "text/xml").withBody("<response>Content</response>")));
@@ -103,7 +103,7 @@ public class ChaosProxyChaosIT
     @Test
     public void chaosProxy_withRequestAndDelayResponseStrategyAndAddHeaders_addsChaosHeaders() throws Exception
     {
-        chaosService.setActiveChaosStrategy(ChaosStrategy.DELAY_RESPONSE);
+        chaosService.setActiveChaosStrategy(ChaosStrategy.DELAY_REQUEST);
         chaosProxyConfigurationService.setFixedDelayPeriod(true);
         chaosProxyConfigurationService.setTracingHeaders(true);
         doNothing().when(mockDelayService).delay(anyLong());

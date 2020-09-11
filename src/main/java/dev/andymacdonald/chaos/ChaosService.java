@@ -1,15 +1,5 @@
 package dev.andymacdonald.chaos;
 
-import dev.andymacdonald.chaos.strategy.ChaosStrategy;
-import dev.andymacdonald.config.ChaosProxyConfigurationService;
-import lombok.Getter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Service;
-
-import javax.servlet.http.HttpServletResponse;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -17,6 +7,18 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
+
+import javax.servlet.http.HttpServletResponse;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+
+import dev.andymacdonald.chaos.strategy.ChaosStrategy;
+import dev.andymacdonald.config.ChaosProxyConfigurationService;
+import lombok.Getter;
 
 @Service
 public class ChaosService
@@ -43,13 +45,23 @@ public class ChaosService
         log.info("Initial active chaos strategy: {}", this.activeChaosStrategy);
     }
 
-    public ChaosResult processRequestAndApplyChaos(Supplier<ResponseEntity<byte[]>> responseEntity) throws InterruptedException
+    public ChaosResult processRequestAndApplyChaos(Supplier<ResponseEntity<byte[]>> responseEntity, String uri) throws InterruptedException
     {
+        ChaosStrategy chaosStrategy;
+        if (Math.random() < 0.5 && shouldBeChaotic(uri)) {
+            if (Math.random() < 0.5) {
+                chaosStrategy = ChaosStrategy.DELAY_REQUEST;
+            } else {
+                chaosStrategy = ChaosStrategy.INSTANT_REQUEST_DELAY_RESPONSE;
+            }
+        } else {
+            chaosStrategy = ChaosStrategy.NO_CHAOS;
+        }
+        log.info("Chaos: {}", chaosStrategy);
 
         int chaosStatusCode;
         ResponseEntity<byte[]> chaosResponseEntity;
         Long delayedBy = 0L;
-        final ChaosStrategy chaosStrategy = loadRuntimeStrategy().orElse(this.activeChaosStrategy);
 
         switch (chaosStrategy)
         {
@@ -67,11 +79,20 @@ public class ChaosService
                 chaosResponseEntity = ResponseEntity.status(badRequest).build();
                 chaosStatusCode = badRequest;
                 break;
-            case DELAY_RESPONSE:
+            case DELAY_REQUEST:
                 delayedBy = delayRequestBasedOnConfiguration();
+                Thread.currentThread().interrupt();
+                throw new InterruptedException("Drop the bass");
+                // this.chaosResponseEntity = responseEntity.get();
+                // this.chaosStatusCode = this.chaosResponseEntity.getStatusCodeValue();
+                // break;
+            case INSTANT_REQUEST_DELAY_RESPONSE:
                 chaosResponseEntity = responseEntity.get();
+                delayedBy = delayRequestBasedOnConfiguration();
                 chaosStatusCode = chaosResponseEntity.getStatusCodeValue();
-                break;
+                Thread.currentThread().interrupt();
+                throw new InterruptedException("Drop the bass");
+                // break;
             case RANDOM_HAVOC:
                 delayedBy = randomlyDelayRequest();
                 chaosResponseEntity = responseEntity.get();
@@ -86,6 +107,12 @@ public class ChaosService
                           .chaosResponseEntity(chaosResponseEntity)
                           .delayedBy(delayedBy)
                           .build();
+    }
+
+    private boolean shouldBeChaotic(String uri)
+    {
+        return Stream.of("/commitTransaction")
+                     .anyMatch(uri::contains);
     }
 
     private Optional<ChaosStrategy> loadRuntimeStrategy()

@@ -63,7 +63,7 @@ public class ChaosProxyConfigurationServiceTest
 
         assertEquals(new ChaosProxyConfigurationService(
                 mockLogger, "", "DELAY_RESPONSE", 0, 120, false, false)
-                .getInitialChaosStrategy(), ChaosStrategy.DELAY_RESPONSE);
+                .getInitialChaosStrategy(), ChaosStrategy.DELAY_REQUEST);
 
         assertEquals(new ChaosProxyConfigurationService(
                 mockLogger, "", "RANDOM_HAVOC", 0, 120, false, false)

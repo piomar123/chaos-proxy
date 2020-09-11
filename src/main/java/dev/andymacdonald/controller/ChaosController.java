@@ -125,7 +125,7 @@ public class ChaosController
         Supplier<ResponseEntity<byte[]>> responseEntitySupplier = () -> restTemplate.exchange(uri, method, httpEntity, byte[].class);
         try
         {
-            ChaosResult chaos = chaosService.processRequestAndApplyChaos(responseEntitySupplier);
+            ChaosResult chaos = chaosService.processRequestAndApplyChaos(responseEntitySupplier, uri.toString());
 
             int responseStatusCode = chaos.getChaosStatusCode();
             byte[] responseBody = chaos.getChaosResponseEntity().getBody();
